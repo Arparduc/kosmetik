@@ -1,0 +1,223 @@
+:root {
+  --bg: #faf9f7;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --accent: #b76ba3;
+  --accent-600: #9b4f8a;
+  --shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+}
+
+.booking {
+  padding: 2.25rem 1rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.booking-header h1 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.75rem;
+  color: #111827;
+}
+.muted {
+  color: var(--muted);
+  margin: 0 0 1.25rem 0;
+}
+
+.booking-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+
+.booking-form .field {
+  display: block;
+  margin-bottom: 0.75rem;
+}
+.field-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.field .label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #e6e7ea;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  background: #fff;
+}
+.field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+.service-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.service-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem;
+  border-radius: 8px;
+}
+.service-option input {
+  width: 18px;
+  height: 18px;
+}
+.service-meta {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+}
+.service-option.checked {
+  background: rgba(183, 107, 163, 0.04);
+  border: 1px solid rgba(183, 107, 163, 0.08);
+}
+.service-price {
+  color: var(--muted);
+  font-weight: 600;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  box-shadow: 0 0 0 4px rgba(183, 107, 163, 0.08);
+  border-color: var(--accent-600);
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+.primary {
+  background: linear-gradient(180deg, var(--accent), var(--accent-600));
+  color: #fff;
+  border: none;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.primary:hover {
+  transform: translateY(-1px);
+}
+.ghost {
+  background: transparent;
+  border: 1px solid #e6e7ea;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.booking-summary h2 {
+  margin-top: 0;
+  font-size: 1.05rem;
+}
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-bottom: 1px dashed #f1f1f1;
+}
+.summary-label {
+  color: var(--muted);
+}
+.summary-notes {
+  margin-top: 0.85rem;
+  color: #374151;
+}
+
+/* Calendar + time slots */
+.calendar-card {
+  margin-bottom: 1rem;
+}
+.time-slots-wrap {
+  margin-top: 0.6rem;
+}
+.time-slots {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+}
+.slot {
+  border-radius: 8px;
+  padding: 0.5rem 0.45rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.slot.available {
+  background: linear-gradient(180deg, #fff, #fff);
+  color: #111;
+}
+.slot.booked {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+.slot.selected {
+  box-shadow: 0 6px 18px rgba(155, 79, 138, 0.12);
+  border-color: rgba(155, 79, 138, 0.18);
+  background: linear-gradient(180deg, var(--accent), var(--accent-600));
+  color: #fff;
+}
+.slot:disabled {
+  opacity: 0.9;
+}
+.slot-legend {
+  margin-top: 0.5rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .booking-grid {
+    grid-template-columns: 1fr;
+  }
+  .field-row {
+    flex-direction: column;
+  }
+}
+
+/* Tablet: increase spacing and adjust summary width */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .booking {
+    padding: 2.5rem 1.25rem;
+  }
+  .booking-grid {
+    grid-template-columns: 1fr 340px;
+  }
+}
+
+/* Desktop: roomy layout */
+@media (min-width: 1200px) {
+  .booking {
+    padding: 3rem 1rem;
+    max-width: 1200px;
+  }
+  .booking-grid {
+    grid-template-columns: 1fr 380px;
+    gap: 1.75rem;
+  }
+  .booking-header h1 {
+    font-size: 2rem;
+  }
+}
