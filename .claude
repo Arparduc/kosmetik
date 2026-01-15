@@ -1,0 +1,76 @@
+{
+  "projectInfo": {
+    "name": "Kosmetik Booking System",
+    "description": "React-based beauty salon booking application with Firebase backend for managing appointments, services, and customer bookings",
+    "type": "web-application",
+    "primaryLanguage": "JavaScript"
+  },
+  "stack": {
+    "frontend": {
+      "framework": "React 19.2",
+      "router": "React Router DOM 7.10",
+      "buildTool": "Vite 7.2",
+      "styling": "CSS (vanilla)"
+    },
+    "backend": {
+      "database": "Firebase Firestore",
+      "authentication": "Firebase (configured)"
+    }
+  },
+  "projectStructure": {
+    "src/pages": "Main application pages (Home, Services, Booking, Contact)",
+    "src/components": "Reusable UI components (Navbar, Footer, ImageGallery, TreatmentShop)",
+    "src/lib": "Firebase configuration and helper functions",
+    "src/data": "Static data like service packages",
+    "src/assets/images": "Gallery and promotional images"
+  },
+  "keyFeatures": [
+    "Real-time appointment booking system",
+    "30-minute time slot management (08:00-17:00)",
+    "Service selection with 30+ cosmetic treatments",
+    "Automatic conflict detection for double-booking prevention",
+    "Live price calculation based on selected services",
+    "Firebase Firestore integration for persistent storage",
+    "Responsive booking summary with live updates"
+  ],
+  "codingConventions": {
+    "componentStyle": "Functional components with hooks",
+    "stateManagement": "React useState and useEffect",
+    "naming": "camelCase for variables and functions, PascalCase for components",
+    "comments": "Hungarian language comments for business logic"
+  },
+  "environment": {
+    "envFile": ".env",
+    "requiredEnvVars": [
+      "VITE_FIREBASE_API_KEY",
+      "VITE_FIREBASE_AUTH_DOMAIN",
+      "VITE_FIREBASE_PROJECT_ID",
+      "VITE_FIREBASE_STORAGE_BUCKET",
+      "VITE_FIREBASE_MESSAGING_SENDER_ID",
+      "VITE_FIREBASE_APP_ID"
+    ]
+  },
+  "importantFiles": {
+    "src/pages/Booking.jsx": "Main booking interface with time slot management and conflict detection",
+    "src/lib/firebase.js": "Firebase configuration and database operations (saveBooking, getBookingsByDate)",
+    "src/App.jsx": "Main application router and layout"
+  },
+  "developmentNotes": [
+    "The booking system uses 30-minute time slots",
+    "Services can be combined, durations are additive",
+    "Time slot availability is checked in real-time against Firebase",
+    "User can preselect services from TreatmentShop via localStorage",
+    "All times are in HH:mm format (24-hour)",
+    "Prices are in Hungarian Forint (Ft)"
+  ],
+  "buildCommands": {
+    "dev": "npm run dev",
+    "build": "npm run build",
+    "preview": "npm run preview",
+    "lint": "npm run lint"
+  },
+  "localization": {
+    "primaryLanguage": "Hungarian (hu-HU)",
+    "notes": "UI text, form labels, and user messages are in Hungarian"
+  }
+}

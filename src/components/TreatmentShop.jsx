@@ -1,26 +1,17 @@
+import { useNavigate } from "react-router-dom";
+import { slugify } from "../lib/utils";
 import packages from "../data/packages";
 
-function slugify(text) {
-  return text
-    .toString()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\w\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .toLowerCase();
-}
-
 function TreatmentShop() {
-  // when a package is selected, store the array of service keys and navigate to booking
+  const navigate = useNavigate();
+
   const handleSelect = (pkg) => {
     const keys = (pkg.services || []).map((s) => slugify(s));
     try {
       localStorage.setItem("preselectedServices", JSON.stringify(keys));
-      // navigate to booking page
-      window.location.href = "/booking";
+      navigate("/booking");
     } catch (err) {
-      console.error("select package", err);
+      console.error("Hiba a csomag kiválasztásakor:", err);
       alert("Hiba történt a csomag kiválasztásakor.");
     }
   };

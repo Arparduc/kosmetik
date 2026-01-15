@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 function Navbar() {
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <header className="site-header">
@@ -33,6 +35,23 @@ function Navbar() {
           <NavLink to="/contact" className="nav-link">
             Kapcsolat
           </NavLink>
+
+          {user ? (
+            <NavLink to="/dashboard" className="nav-link nav-link-user">
+              {user.photoURL && (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName || "User"}
+                  className="nav-avatar"
+                />
+              )}
+              <span>{user.displayName || "Profil"}</span>
+            </NavLink>
+          ) : (
+            <NavLink to="/Login" className="nav-link">
+              Login
+            </NavLink>
+          )}
         </div>
       </nav>
     </header>

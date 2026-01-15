@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { slugify } from "../lib/utils";
 import imgArckezeles from "../assets/images/gallery-06-mask-application.jpg";
 import imgGepi from "../assets/images/gallery-03-device-treatment.jpg";
 import imgProducts from "../assets/images/gallery-10-products-close.jpg";
@@ -55,30 +57,19 @@ const serviceGroups = [
 ];
 
 function Services() {
-  function slugify(text) {
-    return text
-      .toString()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\w\s-]/g, "")
-      .trim()
-      .replace(/\s+/g, "-")
-      .toLowerCase();
-  }
-
+  const navigate = useNavigate();
   const [selected, setSelected] = useState(null);
 
   const handleSelect = (serviceName) => {
     try {
       const key = slugify(serviceName);
       localStorage.setItem("preselectedServices", JSON.stringify([key]));
-      // show selected state briefly for user feedback
       setSelected(serviceName);
       setTimeout(() => {
-        window.location.href = "/booking";
+        navigate("/booking");
       }, 350);
     } catch (err) {
-      console.error("select service", err);
+      console.error("Hiba a szolgáltatás kiválasztásakor:", err);
       alert("Hiba történt a szolgáltatás kiválasztásakor.");
     }
   };

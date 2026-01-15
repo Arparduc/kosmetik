@@ -1,60 +1,40 @@
 import { useEffect, useState } from "react";
 import "./Booking.css";
 import { saveBooking, getBookingsByDate } from "../lib/firebase";
+import { slugify, timeToMinutes, minutesToTime } from "../lib/utils";
+import { useAuth } from "../contexts/AuthContext";
 
-function Booking() {
-  // --- helpers (IDŐ SZÁMOLÁS) ---
-  function timeToMinutes(t) {
-    const [h, m] = (t || "0:0").split(":").map(Number);
-    return h * 60 + m;
+// --- helpers (IDŐ SZÁMOLÁS) ---
+function expandBookingToSlots(booking, step = 30) {
+  const start = booking.time;
+  const dur = booking.durationMinutes ?? 30;
+  if (!start) return [];
+
+  const startM = timeToMinutes(start);
+  const endM = startM + dur;
+
+  const slots = [];
+  for (let m = startM; m < endM; m += step) {
+    slots.push(minutesToTime(m));
   }
+  return slots;
+}
 
-  function minutesToTime(mins) {
-    const h = String(Math.floor(mins / 60)).padStart(2, "0");
-    const m = String(mins % 60).padStart(2, "0");
-    return `${h}:${m}`;
+function requiredSlotsForStart(startTime, durationMinutes) {
+  const dur = Number(durationMinutes) || 30;
+
+  const startM = timeToMinutes(startTime);
+  const endM = startM + dur;
+
+  const slots = [];
+  for (let m = startM; m < endM; m += 30) {
+    slots.push(minutesToTime(m));
   }
+  return slots;
+}
 
-  function expandBookingToSlots(booking, step = 30) {
-    const start = booking.time;
-    const dur = booking.durationMinutes ?? 30;
-    if (!start) return [];
-
-    const startM = timeToMinutes(start);
-    const endM = startM + dur;
-
-    const slots = [];
-    for (let m = startM; m < endM; m += step) {
-      slots.push(minutesToTime(m));
-    }
-    return slots;
-  }
-
-  function requiredSlotsForStart(startTime, durationMinutes) {
-    const dur = Number(durationMinutes) || 30;
-
-    const startM = timeToMinutes(startTime);
-    const endM = startM + dur;
-
-    const slots = [];
-    for (let m = startM; m < endM; m += 30) {
-      slots.push(minutesToTime(m));
-    }
-    return slots;
-  }
-
-  function slugify(text) {
-    return text
-      .toString()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\w\s-]/g, "")
-      .trim()
-      .replace(/\s+/g, "-")
-      .toLowerCase();
-  }
-
-  const services = {
+// Szolgáltatások konfigurációja (komponens szinten kívül a teljesítmény javítása érdekében)
+const services = {
     // Alap kezelések
     [slugify("Szemöldökigazítás")]: {
       label: "Szemöldökigazítás",
@@ -194,6 +174,8 @@ function Booking() {
     },
   };
 
+function Booking() {
+  const { user } = useAuth();
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -205,7 +187,16 @@ function Booking() {
   const [submitting, setSubmitting] = useState(false);
   const [bookedSlots, setBookedSlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState("");
+
+  // Pre-fill form with user data
+  useEffect(() => {
+    if (user) {
+      setForm((prev) => ({
+        ...prev,
+        name: user.displayName || "",
+      }));
+    }
+  }, [user]);
 
   // Load preselected services from TreatmentShop (if any)
   useEffect(() => {
@@ -229,7 +220,6 @@ function Booking() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    console.log("SUBMIT lefutott!", form);
     setSubmitting(true);
     const selectedServices = form.service
       .map((k) => services[k])
@@ -246,6 +236,9 @@ function Booking() {
 
     const payload = {
       ...form,
+      userId: user?.uid,
+      userEmail: user?.email,
+      userName: user?.displayName || form.name,
       services: form.service,
       servicesMeta: selectedServices,
       totalPrice,
@@ -253,11 +246,7 @@ function Booking() {
     };
 
     try {
-      console.log("MENTÉS INDUL -> payload:", payload);
-
-      const res = await saveBooking(payload);
-
-      console.log("MENTÉS SIKERES, ID:", res?.id);
+      await saveBooking(payload);
       alert(
         "Köszönjük! Az időpontkérést rögzítettük. Hamarosan visszaigazoljuk."
       );
@@ -271,12 +260,8 @@ function Booking() {
         notes: "",
       });
     } catch (err) {
-      console.log("MENTÉS HIBA (raw):", err);
-      console.log("MENTÉS HIBA (message):", err?.message);
-      console.log("MENTÉS HIBA (code):", err?.code);
-      console.log("MENTÉS HIBA (stack):", err?.stack);
-
-      alert("Hiba történt a mentés során. Nézd meg a Console-t (F12).");
+      console.error("Hiba a foglalás mentése közben:", err);
+      alert("Hiba történt a mentés során. Kérjük, próbálja újra később.");
     } finally {
       setSubmitting(false);
     }
@@ -345,7 +330,6 @@ function Booking() {
     }
 
     setForm((p) => ({ ...p, time: t }));
-    setSelectedSlot(t);
   }
 
   const selectedServices = form.service.map((k) => services[k]).filter(Boolean);
@@ -393,7 +377,7 @@ function Booking() {
               ) : (
                 allSlots.map((t) => {
                   const booked = bookedSlots.includes(t);
-                  const selected = form.time === t || selectedSlot === t;
+                  const selected = form.time === t;
                   return (
                     <button
                       key={t}
@@ -472,30 +456,6 @@ function Booking() {
               ))}
             </div>
           </label>
-
-          <div className="field-row">
-            <label className="field">
-              <span className="label">Dátum</span>
-              <input
-                type="date"
-                name="date"
-                value={form.date}
-                onChange={handleChange}
-                required
-              />
-            </label>
-
-            <label className="field">
-              <span className="label">Időpont</span>
-              <input
-                type="time"
-                name="time"
-                value={form.time}
-                onChange={handleChange}
-                required
-              />
-            </label>
-          </div>
 
           <label className="field">
             <span className="label">Megjegyzés (opcionális)</span>

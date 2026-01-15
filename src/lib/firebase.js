@@ -7,17 +7,16 @@ import {
   query,
   where,
   getDocs,
-  orderBy,
 } from "firebase/firestore";
+import {
+  getAuth,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+} from "firebase/auth";
 
-console.log("FIREBASE ENV CHECK:", {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-});
-
-// 🔥 IDE KELL a .env-ből jönnie mindennek
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -27,47 +26,119 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// ✅ Debug: ezt fogjuk nézni
-console.log("FIREBASE ENV CHECK:", {
-  apiKey: firebaseConfig.apiKey,
-  projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain,
-});
+console.log("ENV apiKey:", import.meta.env.VITE_FIREBASE_API_KEY);
 
-// ❗ Ha nincs env, itt álljon meg egyből (ne lógjon)
+
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  console.error("FIREBASE CONFIG HIÁNYZIK! .env fájl nincs jól beállítva.");
   throw new Error("Firebase config missing (check .env variables)");
 }
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
+export const auth = getAuth(app);
+
+// Auth providers
+const googleProvider = new GoogleAuthProvider();
+const facebookProvider = new FacebookAuthProvider();
 
 export async function saveBooking(booking) {
-  console.log("saveBooking() START", booking);
-
   try {
     const docRef = await addDoc(collection(db, "bookings"), {
       ...booking,
       createdAt: serverTimestamp(),
     });
-
-    console.log("saveBooking() DONE id=", docRef.id);
     return { id: docRef.id };
   } catch (err) {
-    console.error("saveBooking() ERROR", err);
+    console.error("Hiba a foglalás mentése közben:", err);
     throw err;
   }
 }
 
 export async function getBookingsByDate(dateString) {
-  const q = query(
-    collection(db, "bookings"),
-    where("date", "==", dateString),
-    orderBy("time")
-  );
-  const snap = await getDocs(q);
-  const items = [];
-  snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-  return items;
+  try {
+    const q = query(
+      collection(db, "bookings"),
+      where("date", "==", dateString)
+    );
+    const snap = await getDocs(q);
+    const items = [];
+    snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+    // Kliens oldalon rendezés az idő alapján
+    return items.sort((a, b) => {
+      if (!a.time) return 1;
+      if (!b.time) return -1;
+      return a.time.localeCompare(b.time);
+    });
+  } catch (err) {
+    console.error("Hiba a foglalások lekérdezése közben:", err);
+    return [];
+  }
+}
+
+export async function getUserBookings(userId) {
+  try {
+    const q = query(
+      collection(db, "bookings"),
+      where("userId", "==", userId)
+    );
+    const snap = await getDocs(q);
+    const items = [];
+    snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+    // Rendezés dátum és idő alapján (legújabb elől)
+    return items.sort((a, b) => {
+      const dateCompare = (b.date || "").localeCompare(a.date || "");
+      if (dateCompare !== 0) return dateCompare;
+      return (b.time || "").localeCompare(a.time || "");
+    });
+  } catch (err) {
+    console.error("Hiba a foglalások lekérdezése közben:", err);
+    return [];
+  }
+}
+
+// Auth helper functions
+function getHungarianError(code) {
+  const errors = {
+    "auth/popup-closed-by-user": "A bejelentkezési ablak bezárásra került",
+    "auth/account-exists-with-different-credential":
+      "Ez az email már regisztrálva van másik szolgáltatóval",
+    "auth/network-request-failed": "Hálózati hiba történt",
+    "auth/popup-blocked": "A felugró ablak blokkolva lett",
+    "auth/cancelled-popup-request": "A bejelentkezés megszakításra került",
+  };
+  return errors[code] || "Hiba történt a bejelentkezés során";
+}
+
+export async function signInWithGoogle() {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    return { user: result.user, error: null };
+  } catch (error) {
+    console.error("Google bejelentkezési hiba:", error);
+    return { user: null, error: getHungarianError(error.code) };
+  }
+}
+
+export async function signInWithFacebook() {
+  try {
+    const result = await signInWithPopup(auth, facebookProvider);
+    return { user: result.user, error: null };
+  } catch (error) {
+    console.error("Facebook bejelentkezési hiba:", error);
+    return { user: null, error: getHungarianError(error.code) };
+  }
+}
+
+export async function signOutUser() {
+  try {
+    await signOut(auth);
+    return { error: null };
+  } catch (error) {
+    console.error("Kijelentkezési hiba:", error);
+    return { error: "Kijelentkezési hiba történt" };
+  }
+}
+
+export function onAuthChange(callback) {
+  return onAuthStateChanged(auth, callback);
 }

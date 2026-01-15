@@ -370,3 +370,25 @@ p {
   font-size: 0.95rem;
   color: #666;
 }
+
+/* Avatar styling for navbar */
+.nav-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+}
+
+.nav-link-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 899px) {
+  .nav-avatar {
+    width: 28px;
+    height: 28px;
+  }
+}
