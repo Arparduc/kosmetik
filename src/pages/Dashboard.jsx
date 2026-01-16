@@ -41,6 +41,8 @@ function Dashboard() {
                 src={user.photoURL}
                 alt={user.displayName || "User"}
                 className="profile-avatar"
+                referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
               />
             ) : (
               <div className="profile-avatar-placeholder">

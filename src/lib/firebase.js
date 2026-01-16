@@ -26,7 +26,6 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-console.log("ENV apiKey:", import.meta.env.VITE_FIREBASE_API_KEY);
 
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
@@ -93,6 +92,36 @@ export async function getUserBookings(userId) {
   } catch (err) {
     console.error("Hiba a foglalások lekérdezése közben:", err);
     return [];
+  }
+}
+
+export async function getAllBookings() {
+  try {
+    const snap = await getDocs(collection(db, "bookings"));
+    const items = [];
+    snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+    // Rendezés dátum és idő alapján (legújabb elől)
+    return items.sort((a, b) => {
+      const dateCompare = (b.date || "").localeCompare(a.date || "");
+      if (dateCompare !== 0) return dateCompare;
+      return (b.time || "").localeCompare(a.time || "");
+    });
+  } catch (err) {
+    console.error("Hiba az összes foglalás lekérdezése közben:", err);
+    return [];
+  }
+}
+
+export async function getUserData(userId) {
+  try {
+    const docRef = await getDocs(
+      query(collection(db, "users"), where("__name__", "==", userId))
+    );
+    if (docRef.empty) return null;
+    return docRef.docs[0].data();
+  } catch (err) {
+    console.error("Hiba a felhasználó adatainak lekérdezése közben:", err);
+    return null;
   }
 }
 

@@ -1,10 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { getUserData } from "../lib/firebase";
 
 function Navbar() {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    async function checkAdmin() {
+      if (user) {
+        const userData = await getUserData(user.uid);
+        setIsAdmin(userData?.isAdmin === true);
+      } else {
+        setIsAdmin(false);
+      }
+    }
+    checkAdmin();
+  }, [user]);
 
   return (
     <header className="site-header">
@@ -36,6 +50,12 @@ function Navbar() {
             Kapcsolat
           </NavLink>
 
+          {isAdmin && (
+            <NavLink to="/admin" className="nav-link nav-link-admin">
+              Admin
+            </NavLink>
+          )}
+
           {user ? (
             <NavLink to="/dashboard" className="nav-link nav-link-user">
               {user.photoURL && (
@@ -43,6 +63,8 @@ function Navbar() {
                   src={user.photoURL}
                   alt={user.displayName || "User"}
                   className="nav-avatar"
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
                 />
               )}
               <span>{user.displayName || "Profil"}</span>
