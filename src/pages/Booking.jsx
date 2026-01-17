@@ -39,59 +39,59 @@ const services = {
     [slugify("Szemöldökigazítás")]: {
       label: "Szemöldökigazítás",
       price: "1 000 Ft",
-      duration: 30,
+      duration: 15,
     },
     [slugify("Szemöldökfestés")]: {
       label: "Szemöldökfestés",
       price: "1 500 Ft",
-      duration: 30,
+      duration: 15,
     },
     [slugify("Szempillafestés")]: {
       label: "Szempillafestés",
       price: "1 500 Ft",
-      duration: 30,
+      duration: 20,
     },
     [slugify("Bajuszgyanta")]: {
       label: "Bajuszgyanta",
       price: "500 Ft",
-      duration: 30,
+      duration: 5,
     },
     [slugify("Arcgyanta")]: {
       label: "Arcgyanta",
       price: "800 Ft",
-      duration: 30,
+      duration: 10,
     },
 
     // Gyantázás
     [slugify("Hónaljgyanta")]: {
       label: "Hónaljgyanta",
       price: "1 500 Ft",
-      duration: 30,
+      duration: 10,
     },
     [slugify("Kargyanta (félig)")]: {
       label: "Kargyanta (félig)",
       price: "2 000 Ft",
-      duration: 30,
+      duration: 10,
     },
     [slugify("Kargyanta (teljes)")]: {
       label: "Kargyanta (teljes)",
       price: "2 500 Ft",
-      duration: 30,
+      duration: 15,
     },
     [slugify("Lábszárgyanta")]: {
       label: "Lábszárgyanta",
       price: "2 200 Ft",
-      duration: 30,
+      duration: 10,
     },
     [slugify("Lábgyanta (teljes)")]: {
       label: "Lábgyanta (teljes)",
       price: "3 800 Ft",
-      duration: 30,
+      duration: 20,
     },
     [slugify("Bikinivonalgyanta")]: {
       label: "Bikinivonalgyanta",
       price: "2 500 Ft",
-      duration: 30,
+      duration: 10,
     },
     [slugify("Teljes fazon gyanta")]: {
       label: "Teljes fazon gyanta",
@@ -101,76 +101,76 @@ const services = {
     [slugify("Hasgyanta")]: {
       label: "Hasgyanta",
       price: "4 000 Ft",
-      duration: 30,
+      duration: 10,
     },
     [slugify("Férfi hátgyanta")]: {
       label: "Férfi hátgyanta",
       price: "3 500 Ft",
-      duration: 30,
+      duration: 15,
     },
     [slugify("Férfi mellkasgyanta")]: {
       label: "Férfi mellkasgyanta",
       price: "3 500 Ft",
-      duration: 30,
+      duration: 10,
     },
 
     // Masszírozás
     [slugify("Arcmasszázs")]: {
       label: "Arcmasszázs",
       price: "5 000 Ft",
-      duration: 30,
+      duration: 25,
     },
     [slugify("Arc- és dekoltázsmasszázs")]: {
       label: "Arc- és dekoltázsmasszázs",
       price: "6 000 Ft",
-      duration: 30,
+      duration: 25,
     },
     [slugify("Masszázs kezelésben")]: {
       label: "Masszázs kezelésben",
       price: "2 000 Ft",
-      duration: 30,
+      duration: 25,
     },
 
     // Arckezelések
     [slugify("Radír + maszk")]: {
       label: "Radír + maszk",
       price: "3 500 Ft",
-      duration: 30,
+      duration: 15,
     },
     [slugify("Tini kezelés")]: {
       label: "Tini kezelés",
       price: "8 000 Ft",
-      duration: 30,
+      duration: 60,
     },
     [slugify("Tisztító kezelés")]: {
       label: "Tisztító kezelés",
       price: "10 000 Ft",
-      duration: 30,
+      duration: 60,
     },
     [slugify("Glycopure kezelés")]: {
       label: "Glycopure kezelés",
       price: "9 500 Ft",
-      duration: 30,
+      duration: 60,
     },
     [slugify("Bioplasma kezelés")]: {
       label: "Bioplasma kezelés",
       price: "11 500 Ft",
-      duration: 30,
+      duration: 60,
     },
     [slugify("Nutri-Peptide kezelés")]: {
       label: "Nutri-Peptide kezelés",
       price: "12 500 Ft",
-      duration: 30,
+      duration: 60,
     },
     [slugify("Ester C kezelés")]: {
       label: "Ester C kezelés",
       price: "13 500 Ft",
-      duration: 30,
+      duration: 60,
     },
     [slugify("New Age G4 kezelés")]: {
       label: "New Age G4 kezelés",
       price: "17 000 Ft",
-      duration: 30,
+      duration: 60,
     },
   };
 
@@ -303,7 +303,20 @@ function Booking() {
     return slots;
   }
 
+  // Szűrés: ha ma van kiválasztva, csak jövőbeli időpontok
   const allSlots = generateTimeSlots();
+  const today = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const availableSlots = allSlots.filter((slot) => {
+    // Ha nem mai nap van kiválasztva, minden slot elérhető
+    if (form.date !== today) return true;
+
+    // Ha mai nap, csak a jövőbeli időpontok
+    const slotMinutes = timeToMinutes(slot);
+    return slotMinutes > currentTimeMinutes;
+  });
 
   function handleSlotClick(t) {
     const selectedServices = form.service
@@ -361,12 +374,13 @@ function Booking() {
       <div className="booking-grid">
         <div className="calendar-card card">
           <label className="field">
-            <span className="label">Válassz dátum</span>
+            <span className="label">Válassz dátumot</span>
             <input
               type="date"
               name="date"
               value={form.date}
               onChange={handleChange}
+              min={new Date().toISOString().split("T")[0]}
             />
           </label>
 
@@ -374,8 +388,12 @@ function Booking() {
             <div className="time-slots">
               {slotsLoading ? (
                 <div className="muted">Betöltés…</div>
+              ) : availableSlots.length === 0 ? (
+                <div className="muted">
+                  Nincs elérhető időpont erre a napra. Válassz másik dátumot.
+                </div>
               ) : (
-                allSlots.map((t) => {
+                availableSlots.map((t) => {
                   const booked = bookedSlots.includes(t);
                   const selected = form.time === t;
                   return (
