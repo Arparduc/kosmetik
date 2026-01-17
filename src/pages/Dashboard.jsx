@@ -29,6 +29,16 @@ function Dashboard() {
     }
   };
 
+  // Ellenőrzi, hogy egy foglalás lejárt-e (múltbeli)
+  const isBookingExpired = (booking) => {
+    if (!booking.date || !booking.time) return false;
+
+    const bookingDateTime = new Date(`${booking.date}T${booking.time}:00`);
+    const now = new Date();
+
+    return bookingDateTime < now;
+  };
+
   return (
     <section className="dashboard">
       <h1>Profilom</h1>
@@ -80,13 +90,19 @@ function Dashboard() {
             </div>
           ) : (
             <div className="bookings-list">
-              {bookings.map((booking) => (
-                <div key={booking.id} className="booking-item">
-                  <div className="booking-header">
-                    <span className="booking-date">
-                      {booking.date} {booking.time}
-                    </span>
-                  </div>
+              {bookings.map((booking) => {
+                const expired = isBookingExpired(booking);
+                return (
+                  <div
+                    key={booking.id}
+                    className={`booking-item ${expired ? "expired" : ""}`}
+                  >
+                    <div className="booking-header">
+                      <span className="booking-date">
+                        {booking.date} {booking.time}
+                      </span>
+                      {expired && <span className="expired-badge">Lejárt</span>}
+                    </div>
 
                   <div className="booking-services">
                     {booking.servicesMeta?.map((service, idx) => (
@@ -114,7 +130,8 @@ function Dashboard() {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
