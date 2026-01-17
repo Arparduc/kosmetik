@@ -89,29 +89,6 @@
   box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3);
 }
 
-.instagram-btn {
-  background: linear-gradient(135deg, #fd5949 0%, #d6249f 50%, #285aeb 100%);
-  color: white;
-  position: relative;
-}
-
-.instagram-btn:disabled {
-  background: #ddd;
-  color: #999;
-}
-
-.soon-badge {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background: var(--primary);
-  color: white;
-  font-size: 0.7rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-weight: 600;
-}
-
 .login-note {
   font-size: 0.85rem;
   color: var(--muted);
