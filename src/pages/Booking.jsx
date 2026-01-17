@@ -5,7 +5,21 @@ import { slugify, timeToMinutes, minutesToTime } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
 
 // --- helpers (IDŐ SZÁMOLÁS) ---
-function expandBookingToSlots(booking, step = 30) {
+// Minimum foglalható dátum kiszámítása (mai nap + 2 nap, vasárnap kihagyva)
+function getMinBookingDate() {
+  const today = new Date();
+  const minDate = new Date(today);
+  minDate.setDate(today.getDate() + 2); // +2 nap előretekintés
+
+  // Ha vasárnap lenne (0), akkor még +1 nap (hétfő)
+  if (minDate.getDay() === 0) {
+    minDate.setDate(minDate.getDate() + 1);
+  }
+
+  return minDate.toISOString().split("T")[0];
+}
+
+function expandBookingToSlots(booking, step = 15) {
   const start = booking.time;
   const dur = booking.durationMinutes ?? 30;
   if (!start) return [];
@@ -27,7 +41,7 @@ function requiredSlotsForStart(startTime, durationMinutes) {
   const endM = startM + dur;
 
   const slots = [];
-  for (let m = startM; m < endM; m += 30) {
+  for (let m = startM; m < endM; m += 15) {
     slots.push(minutesToTime(m));
   }
   return slots;
@@ -180,7 +194,7 @@ function Booking() {
     name: "",
     phone: "",
     service: [],
-    date: new Date().toISOString().slice(0, 10),
+    date: getMinBookingDate(),
     time: "",
     notes: "",
   });
@@ -215,6 +229,16 @@ function Booking() {
 
   function handleChange(e) {
     const { name, value } = e.target;
+
+    // Vasárnap ellenőrzése dátum választásnál
+    if (name === "date") {
+      const selectedDate = new Date(value + "T00:00:00");
+      if (selectedDate.getDay() === 0) {
+        alert("Vasárnap szabadnap, kérjük válassz másik napot!");
+        return;
+      }
+    }
+
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
@@ -274,7 +298,7 @@ function Booking() {
       try {
         const items = await getBookingsByDate(form.date);
 
-        const allBooked = items.flatMap((b) => expandBookingToSlots(b, 30));
+        const allBooked = items.flatMap((b) => expandBookingToSlots(b));
         setBookedSlots([...new Set(allBooked)]);
       } catch (err) {
         console.error("fetch slots", err);
@@ -287,7 +311,7 @@ function Booking() {
     fetchSlots();
   }, [form.date]);
 
-  function generateTimeSlots(start = "08:00", end = "17:00", stepMinutes = 30) {
+  function generateTimeSlots(start = "08:00", end = "17:00", stepMinutes = 15) {
     const pad = (n) => n.toString().padStart(2, "0");
     const [sh, sm] = start.split(":").map(Number);
     const [eh, em] = end.split(":").map(Number);
@@ -380,7 +404,7 @@ function Booking() {
               name="date"
               value={form.date}
               onChange={handleChange}
-              min={new Date().toISOString().split("T")[0]}
+              min={getMinBookingDate()}
             />
           </label>
 
