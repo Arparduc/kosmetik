@@ -95,12 +95,20 @@ function Dashboard() {
                 return (
                   <div
                     key={booking.id}
-                    className={`booking-item ${expired ? "expired" : ""}`}
+                    className={`booking-item ${expired ? "expired" : ""} status-${booking.status || "pending"}`}
                   >
                     <div className="booking-header">
-                      <span className="booking-date">
-                        {booking.date} {booking.time}
-                      </span>
+                      <div className="booking-date-wrapper">
+                        <span className="booking-date">
+                          {booking.date} {booking.time}
+                        </span>
+                        <span className={`status-badge status-${booking.status || "pending"}`}>
+                          {booking.status === "pending" && "Várakozó"}
+                          {booking.status === "approved" && "Jóváhagyva"}
+                          {booking.status === "rejected" && "Elutasítva"}
+                          {!booking.status && "Várakozó"}
+                        </span>
+                      </div>
                       {expired && <span className="expired-badge">Lejárt</span>}
                     </div>
 

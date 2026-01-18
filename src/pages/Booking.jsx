@@ -267,12 +267,13 @@ function Booking() {
       servicesMeta: selectedServices,
       totalPrice,
       durationMinutes,
+      status: "pending", // Várakozó státusz, admin jóváhagyásra vár
     };
 
     try {
       await saveBooking(payload);
       alert(
-        "Köszönjük! Az időpontkérést rögzítettük. Hamarosan visszaigazoljuk."
+        "Köszönjük! Az időpontkérést elküldtük. Amint az admin jóváhagyja, értesítünk."
       );
 
       setForm({
@@ -298,7 +299,9 @@ function Booking() {
       try {
         const items = await getBookingsByDate(form.date);
 
-        const allBooked = items.flatMap((b) => expandBookingToSlots(b));
+        // Csak a jóváhagyott foglalások blokkoljanak időpontot
+        const approvedBookings = items.filter((b) => b.status === "approved");
+        const allBooked = approvedBookings.flatMap((b) => expandBookingToSlots(b));
         setBookedSlots([...new Set(allBooked)]);
       } catch (err) {
         console.error("fetch slots", err);

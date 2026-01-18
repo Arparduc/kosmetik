@@ -7,6 +7,8 @@ import {
   query,
   where,
   getDocs,
+  doc,
+  updateDoc,
 } from "firebase/firestore";
 import {
   getAuth,
@@ -170,4 +172,33 @@ export async function signOutUser() {
 
 export function onAuthChange(callback) {
   return onAuthStateChanged(auth, callback);
+}
+
+// Booking status management
+export async function approveBooking(bookingId) {
+  try {
+    const bookingRef = doc(db, "bookings", bookingId);
+    await updateDoc(bookingRef, {
+      status: "approved",
+      approvedAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("Hiba a foglalás jóváhagyása közben:", err);
+    throw err;
+  }
+}
+
+export async function rejectBooking(bookingId) {
+  try {
+    const bookingRef = doc(db, "bookings", bookingId);
+    await updateDoc(bookingRef, {
+      status: "rejected",
+      rejectedAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("Hiba a foglalás elutasítása közben:", err);
+    throw err;
+  }
 }
