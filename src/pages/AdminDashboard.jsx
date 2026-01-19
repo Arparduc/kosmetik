@@ -1,17 +1,33 @@
 import { useState, useEffect } from "react";
 import { getAllBookings, approveBooking, rejectBooking } from "../lib/firebase";
+import { sendApprovalEmail } from "../lib/emailService";
+import AdminCalendar from "./AdminCalendar";
 import "./AdminDashboard.css";
 
 function AdminDashboard() {
+  const [view, setView] = useState("list"); // list or calendar
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // all, upcoming, past
   const [statusFilter, setStatusFilter] = useState("all"); // all, pending, approved, rejected
   const [searchTerm, setSearchTerm] = useState("");
+  const [highlightedBooking, setHighlightedBooking] = useState(null);
 
   useEffect(() => {
     loadBookings();
   }, []);
+
+  // Scroll to highlighted booking
+  useEffect(() => {
+    if (highlightedBooking && view === "list") {
+      setTimeout(() => {
+        const element = document.querySelector(`.booking-row.highlighted`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+    }
+  }, [highlightedBooking, view]);
 
   async function loadBookings() {
     setLoading(true);
@@ -24,8 +40,28 @@ function AdminDashboard() {
     if (!confirm("Biztosan jóváhagyod ezt a foglalást?")) return;
 
     try {
+      // Foglalás jóváhagyása
       await approveBooking(bookingId);
-      alert("Foglalás jóváhagyva!");
+
+      // Foglalás adatok lekérése email küldéshez
+      const booking = bookings.find((b) => b.id === bookingId);
+
+      // Email küldése (háttérben, nem blokkol)
+      if (booking && booking.userEmail) {
+        sendApprovalEmail(booking)
+          .then((result) => {
+            if (result.success) {
+              console.log("✅ Visszaigazoló email elküldve:", booking.userEmail);
+            } else {
+              console.warn("⚠️ Email küldése sikertelen, de a foglalás jóváhagyva.");
+            }
+          })
+          .catch((err) => {
+            console.error("❌ Email küldési hiba:", err);
+          });
+      }
+
+      alert("Foglalás jóváhagyva! Email értesítés kiküldve.");
       loadBookings(); // Újratöltés
     } catch (err) {
       alert("Hiba történt a jóváhagyás során.");
@@ -42,6 +78,15 @@ function AdminDashboard() {
     } catch (err) {
       alert("Hiba történt az elutasítás során.");
     }
+  }
+
+  function handleViewBooking(bookingId) {
+    setView("list");
+    setHighlightedBooking(bookingId);
+    // 3 másodperc után töröljük a kiemelést
+    setTimeout(() => {
+      setHighlightedBooking(null);
+    }, 3000);
   }
 
   const today = new Date().toISOString().split("T")[0];
@@ -86,9 +131,32 @@ function AdminDashboard() {
   return (
     <div className="admin-dashboard">
       <header className="admin-header">
-        <h1>Admin Dashboard</h1>
-        <p className="admin-subtitle">Összes foglalás kezelése</p>
+        <div className="header-content">
+          <div>
+            <h1>Admin Dashboard</h1>
+            <p className="admin-subtitle">Összes foglalás kezelése</p>
+          </div>
+          <div className="view-toggle">
+            <button
+              className={`view-btn ${view === "list" ? "active" : ""}`}
+              onClick={() => setView("list")}
+            >
+              📋 Lista
+            </button>
+            <button
+              className={`view-btn ${view === "calendar" ? "active" : ""}`}
+              onClick={() => setView("calendar")}
+            >
+              📅 Naptár
+            </button>
+          </div>
+        </div>
       </header>
+
+      {view === "calendar" ? (
+        <AdminCalendar onViewBooking={handleViewBooking} />
+      ) : (
+        <>
 
       <div className="admin-stats">
         <div className="stat-card">
@@ -195,7 +263,10 @@ function AdminDashboard() {
             </thead>
             <tbody>
               {filteredBookings.map((booking) => (
-                <tr key={booking.id} className={`booking-row status-${booking.status || 'pending'}`}>
+                <tr
+                  key={booking.id}
+                  className={`booking-row status-${booking.status || 'pending'} ${highlightedBooking === booking.id ? 'highlighted' : ''}`}
+                >
                   <td data-label="Dátum">{booking.date}</td>
                   <td data-label="Idő">{booking.time}</td>
                   <td data-label="Név">{booking.name}</td>
@@ -248,6 +319,8 @@ function AdminDashboard() {
             </tbody>
           </table>
         </div>
+      )}
+        </>
       )}
     </div>
   );
