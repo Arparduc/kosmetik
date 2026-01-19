@@ -13,9 +13,17 @@ const EMAILJS_CONFIG = {
  */
 export async function sendApprovalEmail(booking) {
   try {
+    // Email cím ellenőrzése
+    const userEmail = booking.userEmail || booking.email;
+
+    if (!userEmail) {
+      console.warn("⚠️ Nincs email cím, email nem kerül kiküldésre.");
+      return { success: false, error: "No email address" };
+    }
+
     // Email template paraméterei
     const templateParams = {
-      to_email: booking.userEmail,
+      email: userEmail,  // <-- Template {{email}} paraméter
       to_name: booking.name || booking.userName,
       booking_date: booking.date,
       booking_time: booking.time,

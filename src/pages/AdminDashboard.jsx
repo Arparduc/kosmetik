@@ -46,6 +46,10 @@ function AdminDashboard() {
       // Foglalás adatok lekérése email küldéshez
       const booking = bookings.find((b) => b.id === bookingId);
 
+      // Debug: ellenőrizzük a booking adatokat
+      console.log("📧 Email küldés - Booking adatok:", booking);
+      console.log("📧 Email címzett:", booking?.userEmail);
+
       // Email küldése (háttérben, nem blokkol)
       if (booking && booking.userEmail) {
         sendApprovalEmail(booking)
@@ -59,6 +63,11 @@ function AdminDashboard() {
           .catch((err) => {
             console.error("❌ Email küldési hiba:", err);
           });
+      } else {
+        console.warn("⚠️ Nincs email cím a foglaláshoz, email nem kerül kiküldésre.");
+        alert("Foglalás jóváhagyva! (Nincs email cím, értesítés nem került kiküldésre.)");
+        loadBookings();
+        return;
       }
 
       alert("Foglalás jóváhagyva! Email értesítés kiküldve.");
