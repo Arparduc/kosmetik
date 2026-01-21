@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "./Booking.css";
-import { saveBooking, getBookingsByDate } from "../lib/firebase";
+import { saveBooking, getBookingsByDate, getAllServices } from "../lib/firebase";
 import { slugify, timeToMinutes, minutesToTime } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -47,151 +47,18 @@ function requiredSlotsForStart(startTime, durationMinutes) {
   return slots;
 }
 
-// Szolgáltatások konfigurációja (komponens szinten kívül a teljesítmény javítása érdekében)
-const services = {
-    // Alap kezelések
-    [slugify("Szemöldökigazítás")]: {
-      label: "Szemöldökigazítás",
-      price: "1 000 Ft",
-      duration: 15,
-    },
-    [slugify("Szemöldökfestés")]: {
-      label: "Szemöldökfestés",
-      price: "1 500 Ft",
-      duration: 15,
-    },
-    [slugify("Szempillafestés")]: {
-      label: "Szempillafestés",
-      price: "1 500 Ft",
-      duration: 20,
-    },
-    [slugify("Bajuszgyanta")]: {
-      label: "Bajuszgyanta",
-      price: "500 Ft",
-      duration: 5,
-    },
-    [slugify("Arcgyanta")]: {
-      label: "Arcgyanta",
-      price: "800 Ft",
-      duration: 10,
-    },
-
-    // Gyantázás
-    [slugify("Hónaljgyanta")]: {
-      label: "Hónaljgyanta",
-      price: "1 500 Ft",
-      duration: 10,
-    },
-    [slugify("Kargyanta (félig)")]: {
-      label: "Kargyanta (félig)",
-      price: "2 000 Ft",
-      duration: 10,
-    },
-    [slugify("Kargyanta (teljes)")]: {
-      label: "Kargyanta (teljes)",
-      price: "2 500 Ft",
-      duration: 15,
-    },
-    [slugify("Lábszárgyanta")]: {
-      label: "Lábszárgyanta",
-      price: "2 200 Ft",
-      duration: 10,
-    },
-    [slugify("Lábgyanta (teljes)")]: {
-      label: "Lábgyanta (teljes)",
-      price: "3 800 Ft",
-      duration: 20,
-    },
-    [slugify("Bikinivonalgyanta")]: {
-      label: "Bikinivonalgyanta",
-      price: "2 500 Ft",
-      duration: 10,
-    },
-    [slugify("Teljes fazon gyanta")]: {
-      label: "Teljes fazon gyanta",
-      price: "4 000 Ft",
-      duration: 30,
-    },
-    [slugify("Hasgyanta")]: {
-      label: "Hasgyanta",
-      price: "4 000 Ft",
-      duration: 10,
-    },
-    [slugify("Férfi hátgyanta")]: {
-      label: "Férfi hátgyanta",
-      price: "3 500 Ft",
-      duration: 15,
-    },
-    [slugify("Férfi mellkasgyanta")]: {
-      label: "Férfi mellkasgyanta",
-      price: "3 500 Ft",
-      duration: 10,
-    },
-
-    // Masszírozás
-    [slugify("Arcmasszázs")]: {
-      label: "Arcmasszázs",
-      price: "5 000 Ft",
-      duration: 25,
-    },
-    [slugify("Arc- és dekoltázsmasszázs")]: {
-      label: "Arc- és dekoltázsmasszázs",
-      price: "6 000 Ft",
-      duration: 25,
-    },
-    [slugify("Masszázs kezelésben")]: {
-      label: "Masszázs kezelésben",
-      price: "2 000 Ft",
-      duration: 25,
-    },
-
-    // Arckezelések
-    [slugify("Radír + maszk")]: {
-      label: "Radír + maszk",
-      price: "3 500 Ft",
-      duration: 15,
-    },
-    [slugify("Tini kezelés")]: {
-      label: "Tini kezelés",
-      price: "8 000 Ft",
-      duration: 60,
-    },
-    [slugify("Tisztító kezelés")]: {
-      label: "Tisztító kezelés",
-      price: "10 000 Ft",
-      duration: 60,
-    },
-    [slugify("Glycopure kezelés")]: {
-      label: "Glycopure kezelés",
-      price: "9 500 Ft",
-      duration: 60,
-    },
-    [slugify("Bioplasma kezelés")]: {
-      label: "Bioplasma kezelés",
-      price: "11 500 Ft",
-      duration: 60,
-    },
-    [slugify("Nutri-Peptide kezelés")]: {
-      label: "Nutri-Peptide kezelés",
-      price: "12 500 Ft",
-      duration: 60,
-    },
-    [slugify("Ester C kezelés")]: {
-      label: "Ester C kezelés",
-      price: "13 500 Ft",
-      duration: 60,
-    },
-    [slugify("New Age G4 kezelés")]: {
-      label: "New Age G4 kezelés",
-      price: "17 000 Ft",
-      duration: 60,
-    },
-  };
-
 function Booking() {
   const { user } = useAuth();
+  const [services, setServices] = useState({});
+  const [expandedCategories, setExpandedCategories] = useState({
+    "Alap kezelések": true,
+    "Gyantázás": false,
+    "Masszírozás": false,
+    "Arckezelések": false,
+  });
   const [form, setForm] = useState({
-    name: "",
+    lastName: "",
+    firstName: "",
     phone: "",
     service: [],
     date: getMinBookingDate(),
@@ -202,12 +69,56 @@ function Booking() {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
 
+  // Load services from Firestore
+  useEffect(() => {
+    async function loadServices() {
+      try {
+        const data = await getAllServices();
+        // Convert array to slug-based object for compatibility
+        const servicesObj = {};
+        data.forEach((service) => {
+          if (service.active !== false) {
+            servicesObj[service.slug] = {
+              label: service.label,
+              price: new Intl.NumberFormat("hu-HU").format(service.price) + " Ft",
+              duration: service.duration,
+              category: service.category || "Alap kezelések",
+            };
+          }
+        });
+        setServices(servicesObj);
+      } catch (err) {
+        console.error("Hiba a szolgáltatások betöltése közben:", err);
+      }
+    }
+    loadServices();
+  }, []);
+
+  function toggleCategory(category) {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
+  }
+
+  // Group services by category
+  const servicesByCategory = Object.entries(services).reduce((acc, [key, service]) => {
+    const cat = service.category || "Alap kezelések";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push({ key, ...service });
+    return acc;
+  }, {});
+
   // Pre-fill form with user data
   useEffect(() => {
-    if (user) {
+    if (user && user.displayName) {
+      const nameParts = user.displayName.split(" ");
+      const lastName = nameParts[0] || "";
+      const firstName = nameParts.slice(1).join(" ") || "";
       setForm((prev) => ({
         ...prev,
-        name: user.displayName || "",
+        lastName,
+        firstName,
       }));
     }
   }, [user]);
@@ -245,6 +156,9 @@ function Booking() {
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
+
+    const fullName = `${form.lastName} ${form.firstName}`.trim();
+
     const selectedServices = form.service
       .map((k) => services[k])
       .filter(Boolean);
@@ -260,9 +174,10 @@ function Booking() {
 
     const payload = {
       ...form,
+      name: fullName,
       userId: user?.uid,
       userEmail: user?.email,
-      userName: user?.displayName || form.name,
+      userName: user?.displayName || fullName,
       services: form.service,
       servicesMeta: selectedServices,
       totalPrice,
@@ -393,115 +308,159 @@ function Booking() {
       <header className="booking-header">
         <h1>Időpontfoglalás</h1>
         <p className="muted">
-          Add meg adataidat és válaszd ki a szolgáltatást. A végleges időpontot
-          a kozmetikus fogja visszaigazolni.
+          Válaszd ki a szolgáltatást, add meg adataidat, majd válassz időpontot.
+          A végleges időpontot a kozmetikus fogja visszaigazolni.
         </p>
       </header>
 
       <div className="booking-grid">
-        <div className="calendar-card card">
-          <label className="field">
-            <span className="label">Válassz dátumot</span>
-            <input
-              type="date"
-              name="date"
-              value={form.date}
-              onChange={handleChange}
-              min={getMinBookingDate()}
-            />
-          </label>
-
-          <div className="time-slots-wrap">
-            <div className="time-slots">
-              {slotsLoading ? (
-                <div className="muted">Betöltés…</div>
-              ) : availableSlots.length === 0 ? (
-                <div className="muted">
-                  Nincs elérhető időpont erre a napra. Válassz másik dátumot.
-                </div>
-              ) : (
-                availableSlots.map((t) => {
-                  const booked = bookedSlots.includes(t);
-                  const selected = form.time === t;
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      className={`slot ${booked ? "booked" : "available"} ${
-                        selected ? "selected" : ""
-                      }`}
-                      onClick={() => handleSlotClick(t)}
-                      disabled={booked}
-                      aria-pressed={selected}
-                    >
-                      {t}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-            <div className="slot-legend">
-              <span>
-                <strong>Jelenleg nyitva:</strong> 08:00–17:00
-              </span>
-            </div>
-          </div>
-        </div>
         <form
           className="booking-form card"
           onSubmit={handleSubmit}
           aria-label="Időpontfoglalás űrlap"
         >
+          {/* 1. SZOLGÁLTATÁSOK */}
+          <div className="field">
+            <span className="label">Szolgáltatások (több is választható)</span>
+            <div className="service-categories">
+              {Object.entries(servicesByCategory).map(([category, items]) => (
+                <div key={category} className="service-category">
+                  <button
+                    type="button"
+                    className="category-header"
+                    onClick={() => toggleCategory(category)}
+                  >
+                    <span className="category-name">{category}</span>
+                    <span className="category-icon">
+                      {expandedCategories[category] ? "▼" : "▶"}
+                    </span>
+                  </button>
+                  {expandedCategories[category] && (
+                    <div className="service-list">
+                      {items.map(({ key, label, price }) => (
+                        <label
+                          key={key}
+                          className={`service-option ${
+                            form.service.includes(key) ? "checked" : ""
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            name="service"
+                            value={key}
+                            checked={form.service.includes(key)}
+                            onChange={() => toggleService(key)}
+                          />
+                          <div className="service-meta">
+                            <span className="service-name">{label}</span>
+                            <span className="service-price">{price}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 2. ADATOK */}
           <div className="field-row">
             <label className="field">
-              <span className="label">Név</span>
+              <span className="label">Vezetéknév</span>
               <input
-                name="name"
-                value={form.name}
+                type="text"
+                name="lastName"
+                value={form.lastName}
                 onChange={handleChange}
-                placeholder="Teljes név"
+                placeholder="Vezetéknév"
+                pattern="[A-Za-zÀ-ž\s\-]+"
+                title="Csak betűk, szóközök és kötőjel engedélyezett"
                 required
               />
             </label>
 
             <label className="field">
-              <span className="label">Telefonszám</span>
+              <span className="label">Keresztnév</span>
               <input
-                name="phone"
-                value={form.phone}
+                type="text"
+                name="firstName"
+                value={form.firstName}
                 onChange={handleChange}
-                placeholder="Pl. +36 70 123 4567"
+                placeholder="Keresztnév"
+                pattern="[A-Za-zÀ-ž\s\-]+"
+                title="Csak betűk, szóközök és kötőjel engedélyezett"
                 required
               />
             </label>
           </div>
 
           <label className="field">
-            <span className="label">Szolgáltatások (több is választható)</span>
-            <div className="service-list">
-              {Object.entries(services).map(([key, s]) => (
-                <label
-                  key={key}
-                  className={`service-option ${
-                    form.service.includes(key) ? "checked" : ""
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    name="service"
-                    value={key}
-                    checked={form.service.includes(key)}
-                    onChange={() => toggleService(key)}
-                  />
-                  <div className="service-meta">
-                    <span className="service-name">{s.label}</span>
-                    <span className="service-price">{s.price}</span>
-                  </div>
-                </label>
-              ))}
-            </div>
+            <span className="label">Telefonszám</span>
+            <input
+              type="tel"
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="+36 70 123 4567"
+              pattern="^(\+36|06)[\s\-]?[1-9][0-9][\s\-]?[0-9]{3}[\s\-]?[0-9]{4}$"
+              title="Kérlek valós magyar telefonszámot adj meg (pl. +36 70 123 4567 vagy 06 70 123 4567)"
+              required
+            />
           </label>
 
+          {/* 3. DÁTUM ÉS IDŐPONT */}
+          <div className="field">
+            <label className="date-field">
+              <span className="label">Válassz dátumot</span>
+              <input
+                type="date"
+                name="date"
+                value={form.date}
+                onChange={handleChange}
+                min={getMinBookingDate()}
+              />
+            </label>
+
+            <div className="time-slots-wrap">
+              <span className="label">Válassz időpontot</span>
+              <div className="time-slots">
+                {slotsLoading ? (
+                  <div className="muted">Betöltés…</div>
+                ) : availableSlots.length === 0 ? (
+                  <div className="muted">
+                    Nincs elérhető időpont erre a napra. Válassz másik dátumot.
+                  </div>
+                ) : (
+                  availableSlots.map((t) => {
+                    const booked = bookedSlots.includes(t);
+                    const selected = form.time === t;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        className={`slot ${booked ? "booked" : "available"} ${
+                          selected ? "selected" : ""
+                        }`}
+                        onClick={() => handleSlotClick(t)}
+                        disabled={booked}
+                        aria-pressed={selected}
+                      >
+                        {t}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+              <div className="slot-legend">
+                <span>
+                  <strong>Jelenleg nyitva:</strong> 08:00–17:00
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. MEGJEGYZÉS */}
           <label className="field">
             <span className="label">Megjegyzés (opcionális)</span>
             <textarea
@@ -521,10 +480,11 @@ function Booking() {
               className="ghost"
               onClick={() =>
                 setForm({
-                  name: "",
+                  lastName: "",
+                  firstName: "",
                   phone: "",
                   service: [],
-                  date: "",
+                  date: getMinBookingDate(),
                   time: "",
                   notes: "",
                 })
@@ -539,7 +499,7 @@ function Booking() {
           <h2>Rendelés áttekintés</h2>
           <div className="summary-item">
             <span className="summary-label">Név</span>
-            <span>{form.name || "—"}</span>
+            <span>{form.lastName && form.firstName ? `${form.lastName} ${form.firstName}` : "—"}</span>
           </div>
 
           <div className="summary-item">

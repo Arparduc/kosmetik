@@ -78,6 +78,19 @@
   border-radius: 12px;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.stat-card.active {
+  border: 3px solid white;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  transform: scale(1.05);
 }
 
 .stat-card.pending {
@@ -100,7 +113,8 @@
 
 .stat-label {
   font-size: 1rem;
-  opacity: 0.9;
+  opacity: 1;
+  font-weight: 600;
 }
 
 .admin-controls {
@@ -245,32 +259,32 @@
 
 .bookings-table th:nth-child(2),
 .bookings-table td:nth-child(2) {
-  width: 6%;
+  width: 5%;
 }
 
 .bookings-table th:nth-child(3),
 .bookings-table td:nth-child(3) {
-  width: 12%;
+  width: 11%;
 }
 
 .bookings-table th:nth-child(4),
 .bookings-table td:nth-child(4) {
-  width: 10%;
+  width: 9%;
 }
 
 .bookings-table th:nth-child(5),
 .bookings-table td:nth-child(5) {
-  width: 15%;
+  width: 13%;
 }
 
 .bookings-table th:nth-child(6),
 .bookings-table td:nth-child(6) {
-  width: 20%;
+  width: 18%;
 }
 
 .bookings-table th:nth-child(7),
 .bookings-table td:nth-child(7) {
-  width: 9%;
+  width: 8%;
 }
 
 .bookings-table th:nth-child(8),
@@ -280,7 +294,7 @@
 
 .bookings-table th:nth-child(9),
 .bookings-table td:nth-child(9) {
-  width: 10%;
+  width: 18%;
 }
 
 .bookings-table tbody tr:hover {
@@ -351,20 +365,27 @@
 
 .action-buttons {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   justify-content: center;
+  align-items: center;
 }
 
 .approve-btn,
-.reject-btn {
-  padding: 0.5rem 0.75rem;
+.reject-btn,
+.delete-btn {
+  padding: 0.4rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: bold;
   transition: all 0.2s ease;
-  min-width: 40px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .approve-btn {
@@ -374,7 +395,7 @@
 
 .approve-btn:hover {
   background: #218838;
-  transform: scale(1.05);
+  transform: scale(1.1);
 }
 
 .reject-btn {
@@ -384,12 +405,23 @@
 
 .reject-btn:hover {
   background: #c82333;
-  transform: scale(1.05);
+  transform: scale(1.1);
+}
+
+.delete-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #5a6268;
+  transform: scale(1.1);
 }
 
 .no-actions {
   color: #999;
-  font-size: 1.2rem;
+  font-size: 1rem;
+  white-space: nowrap;
 }
 
 /* Row highlighting by status */

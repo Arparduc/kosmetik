@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { getAllBookings, approveBooking, rejectBooking } from "../lib/firebase";
-import { sendApprovalEmail } from "../lib/emailService";
+import { getAllBookings, approveBooking, rejectBooking, deleteBooking } from "../lib/firebase";
+import { sendApprovalEmail, sendRejectionEmail } from "../lib/emailService";
 import AdminCalendar from "./AdminCalendar";
+import AdminServices from "./AdminServices";
 import "./AdminDashboard.css";
 
 function AdminDashboard() {
-  const [view, setView] = useState("list"); // list or calendar
+  const [view, setView] = useState("list"); // list, calendar, or services
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // all, upcoming, past
@@ -81,11 +82,59 @@ function AdminDashboard() {
     if (!confirm("Biztosan elutasítod ezt a foglalást?")) return;
 
     try {
+      // Foglalás elutasítása
       await rejectBooking(bookingId);
+
+      // Foglalás adatok lekérése email küldéshez
+      const booking = bookings.find((b) => b.id === bookingId);
+
+      // Email küldése (háttérben, nem blokkol)
+      if (booking && booking.userEmail) {
+        sendRejectionEmail(booking)
+          .then((result) => {
+            if (result.success) {
+              console.log("✅ Visszamondó email elküldve:", booking.userEmail);
+            }
+          })
+          .catch((err) => {
+            console.error("❌ Email küldési hiba:", err);
+          });
+      }
+
       alert("Foglalás elutasítva!");
       loadBookings(); // Újratöltés
     } catch (err) {
       alert("Hiba történt az elutasítás során.");
+    }
+  }
+
+  async function handleDelete(bookingId) {
+    if (!confirm("Biztosan törlöd ezt a foglalást? Ez véglegesen törli az adatbázisból, és az időpont újra szabaddá válik.")) return;
+
+    try {
+      // Foglalás adatok lekérése email küldéshez (törlés előtt!)
+      const booking = bookings.find((b) => b.id === bookingId);
+
+      // Foglalás törlése
+      await deleteBooking(bookingId);
+
+      // Email küldése CSAK akkor, ha jóváhagyott foglalást törlünk
+      if (booking && booking.status === "approved" && booking.userEmail) {
+        sendRejectionEmail(booking)
+          .then((result) => {
+            if (result.success) {
+              console.log("✅ Lemondó email elküldve:", booking.userEmail);
+            }
+          })
+          .catch((err) => {
+            console.error("❌ Email küldési hiba:", err);
+          });
+      }
+
+      alert("Foglalás törölve!");
+      loadBookings(); // Újratöltés
+    } catch (err) {
+      alert("Hiba történt a törlés során.");
     }
   }
 
@@ -158,29 +207,49 @@ function AdminDashboard() {
             >
               📅 Naptár
             </button>
+            <button
+              className={`view-btn ${view === "services" ? "active" : ""}`}
+              onClick={() => setView("services")}
+            >
+              💰 Szolgáltatások
+            </button>
           </div>
         </div>
       </header>
 
       {view === "calendar" ? (
         <AdminCalendar onViewBooking={handleViewBooking} />
+      ) : view === "services" ? (
+        <AdminServices />
       ) : (
         <>
 
       <div className="admin-stats">
-        <div className="stat-card">
+        <div
+          className={`stat-card ${statusFilter === "all" ? "active" : ""}`}
+          onClick={() => setStatusFilter("all")}
+        >
           <div className="stat-number">{stats.total}</div>
           <div className="stat-label">Összes</div>
         </div>
-        <div className="stat-card pending">
+        <div
+          className={`stat-card pending ${statusFilter === "pending" ? "active" : ""}`}
+          onClick={() => setStatusFilter("pending")}
+        >
           <div className="stat-number">{stats.pending}</div>
           <div className="stat-label">Várakozó</div>
         </div>
-        <div className="stat-card approved">
+        <div
+          className={`stat-card approved ${statusFilter === "approved" ? "active" : ""}`}
+          onClick={() => setStatusFilter("approved")}
+        >
           <div className="stat-number">{stats.approved}</div>
           <div className="stat-label">Jóváhagyott</div>
         </div>
-        <div className="stat-card rejected">
+        <div
+          className={`stat-card rejected ${statusFilter === "rejected" ? "active" : ""}`}
+          onClick={() => setStatusFilter("rejected")}
+        >
           <div className="stat-number">{stats.rejected}</div>
           <div className="stat-label">Elutasított</div>
         </div>
@@ -295,33 +364,42 @@ function AdminDashboard() {
                   </td>
                   <td data-label="Státusz">
                     <span className={`status-badge status-${booking.status || 'pending'}`}>
-                      {booking.status === "pending" && "Várakozó"}
-                      {booking.status === "approved" && "Jóváhagyva"}
-                      {booking.status === "rejected" && "Elutasítva"}
-                      {!booking.status && "Várakozó"}
+                      {booking.status === "pending" && "⏳"}
+                      {booking.status === "approved" && "✅"}
+                      {booking.status === "rejected" && "❌"}
+                      {!booking.status && "⏳"}
                     </span>
                   </td>
                   <td data-label="Műveletek" className="actions-cell">
-                    {booking.status === "pending" || !booking.status ? (
-                      <div className="action-buttons">
-                        <button
-                          className="approve-btn"
-                          onClick={() => handleApprove(booking.id)}
-                          title="Jóváhagy"
-                        >
-                          ✓
-                        </button>
-                        <button
-                          className="reject-btn"
-                          onClick={() => handleReject(booking.id)}
-                          title="Elutasít"
-                        >
-                          ✗
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="no-actions">—</span>
-                    )}
+                    <div className="action-buttons">
+                      {booking.status === "pending" || !booking.status ? (
+                        <>
+                          <button
+                            className="approve-btn"
+                            onClick={() => handleApprove(booking.id)}
+                            title="Jóváhagy"
+                          >
+                            ✓
+                          </button>
+                          <button
+                            className="reject-btn"
+                            onClick={() => handleReject(booking.id)}
+                            title="Elutasít"
+                          >
+                            ✗
+                          </button>
+                        </>
+                      ) : (
+                        <span className="no-actions">—</span>
+                      )}
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDelete(booking.id)}
+                        title="Törlés"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

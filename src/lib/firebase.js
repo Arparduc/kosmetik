@@ -9,6 +9,7 @@ import {
   getDocs,
   doc,
   updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import {
   getAuth,
@@ -41,6 +42,13 @@ export const auth = getAuth(app);
 // Auth providers
 const googleProvider = new GoogleAuthProvider();
 const facebookProvider = new FacebookAuthProvider();
+// Development módban csak public_profile-t kérünk
+facebookProvider.setCustomParameters({
+  display: 'popup',
+  auth_type: ''
+});
+// NE kérjünk email-t (development módban problémás)
+facebookProvider.addScope('public_profile');
 
 export async function saveBooking(booking) {
   try {
@@ -152,7 +160,14 @@ export async function signInWithGoogle() {
 
 export async function signInWithFacebook() {
   try {
-    const result = await signInWithPopup(auth, facebookProvider);
+    // Új provider példány minden bejelentkezéshez
+    const fbProvider = new FacebookAuthProvider();
+    fbProvider.addScope('public_profile'); // Csak public_profile, NE email
+    fbProvider.setCustomParameters({
+      display: 'popup'
+    });
+
+    const result = await signInWithPopup(auth, fbProvider);
     return { user: result.user, error: null };
   } catch (error) {
     console.error("Facebook bejelentkezési hiba:", error);
@@ -199,6 +214,77 @@ export async function rejectBooking(bookingId) {
     return { success: true };
   } catch (err) {
     console.error("Hiba a foglalás elutasítása közben:", err);
+    throw err;
+  }
+}
+
+export async function deleteBooking(bookingId) {
+  try {
+    const bookingRef = doc(db, "bookings", bookingId);
+    await deleteDoc(bookingRef);
+    return { success: true };
+  } catch (err) {
+    console.error("Hiba a foglalás törlése közben:", err);
+    throw err;
+  }
+}
+
+// Service management functions
+export async function getAllServices() {
+  try {
+    const snap = await getDocs(collection(db, "services"));
+    const items = [];
+    snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+    // Rendezés kategória és label alapján
+    return items.sort((a, b) => {
+      const catCompare = (a.category || "").localeCompare(b.category || "");
+      if (catCompare !== 0) return catCompare;
+      return (a.label || "").localeCompare(b.label || "");
+    });
+  } catch (err) {
+    console.error("Hiba a szolgáltatások lekérdezése közben:", err);
+    return [];
+  }
+}
+
+export async function saveService(service) {
+  try {
+    const docRef = await addDoc(collection(db, "services"), {
+      ...service,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    return { id: docRef.id };
+  } catch (err) {
+    console.error("Hiba a szolgáltatás mentése közben:", err);
+    throw err;
+  }
+}
+
+export async function updateService(serviceId, updates) {
+  try {
+    const serviceRef = doc(db, "services", serviceId);
+    await updateDoc(serviceRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("Hiba a szolgáltatás frissítése közben:", err);
+    throw err;
+  }
+}
+
+export async function deleteService(serviceId) {
+  try {
+    const serviceRef = doc(db, "services", serviceId);
+    await updateDoc(serviceRef, {
+      active: false,
+      deletedAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("Hiba a szolgáltatás törlése közben:", err);
     throw err;
   }
 }

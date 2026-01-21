@@ -22,8 +22,27 @@
 .login-intro {
   font-size: 1rem;
   color: var(--muted);
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   line-height: 1.6;
+}
+
+.login-phone {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.login-phone a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.login-phone a:hover {
+  color: var(--accent-600);
+  text-decoration: underline;
 }
 
 .error-message {

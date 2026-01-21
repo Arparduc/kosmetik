@@ -48,8 +48,11 @@ function Login() {
       <div className="login-card card">
         <h1>Bejelentkezés</h1>
         <p className="login-intro">
-          Jelentkezz be a Google vagy Facebook fiókodddal, hogy hozzáférj a
-          foglalásaidhoz és könnyedén időpontot foglalj.
+          Jelentkezz be a Google fiókoddal, hogy hozzáférj a foglalásaidhoz és
+          könnyedén időpontot foglalj.
+        </p>
+        <p className="login-phone">
+          Vagy foglalj telefonon: <a href="tel:+36301234567">+36 30 123 4567</a>
         </p>
 
         {error && <div className="error-message">{error}</div>}
@@ -82,7 +85,8 @@ function Login() {
             Bejelentkezés Google fiókkal
           </button>
 
-          <button
+          {/* Facebook login átmenetileg elrejtve - később visszaállítható */}
+          {/* <button
             type="button"
             className="login-btn facebook-btn"
             onClick={handleFacebookSignIn}
@@ -95,7 +99,7 @@ function Login() {
               />
             </svg>
             Bejelentkezés Facebook fiókkal
-          </button>
+          </button> */}
         </div>
 
         <p className="login-note">

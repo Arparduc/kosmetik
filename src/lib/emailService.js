@@ -55,13 +55,22 @@ export async function sendApprovalEmail(booking) {
 }
 
 /**
- * Email küldése foglalás elutasításakor
+ * Email küldése foglalás elutasításakor vagy törlésekor
  * @param {Object} booking - A foglalás adatai
  */
 export async function sendRejectionEmail(booking) {
   try {
+    // Email cím ellenőrzése
+    const userEmail = booking.userEmail || booking.email;
+
+    if (!userEmail) {
+      console.warn("⚠️ Nincs email cím, email nem kerül kiküldésre.");
+      return { success: false, error: "No email address" };
+    }
+
+    // Email template paraméterei
     const templateParams = {
-      to_email: booking.userEmail,
+      email: userEmail,  // <-- Template {{email}} paraméter
       to_name: booking.name || booking.userName,
       booking_date: booking.date,
       booking_time: booking.time,
@@ -70,19 +79,18 @@ export async function sendRejectionEmail(booking) {
         .join(", ") || "Nincs megadva",
     };
 
-    // Külön template elutasításhoz (opcionális - később hozzáadható)
-    // Egyelőre ugyanazt a template-et használjuk "rejected" státusszal
+    // Email küldése EmailJS-en keresztül
     const response = await emailjs.send(
       EMAILJS_CONFIG.serviceId,
-      "template_rejection", // Külön template elutasításhoz
+      "template_axjeb1g", // Rejection Email template
       templateParams,
       EMAILJS_CONFIG.publicKey
     );
 
-    console.log("✅ Elutasító email elküldve:", response);
+    console.log("✅ Visszamondó email elküldve:", response);
     return { success: true, response };
   } catch (error) {
-    console.error("❌ Hiba az elutasító email küldése közben:", error);
+    console.error("❌ Hiba a visszamondó email küldése közben:", error);
     return { success: false, error };
   }
 }
