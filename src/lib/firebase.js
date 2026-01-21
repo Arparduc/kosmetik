@@ -1,4 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
+import { logger } from "./logger";
 import {
   getFirestore,
   collection,
@@ -58,7 +59,7 @@ export async function saveBooking(booking) {
     });
     return { id: docRef.id };
   } catch (err) {
-    console.error("Hiba a foglalás mentése közben:", err);
+    logger.error("Hiba a foglalás mentése közben:", err);
     throw err;
   }
 }
@@ -79,7 +80,7 @@ export async function getBookingsByDate(dateString) {
       return a.time.localeCompare(b.time);
     });
   } catch (err) {
-    console.error("Hiba a foglalások lekérdezése közben:", err);
+    logger.error("Hiba a foglalások lekérdezése közben:", err);
     return [];
   }
 }
@@ -100,7 +101,7 @@ export async function getUserBookings(userId) {
       return (b.time || "").localeCompare(a.time || "");
     });
   } catch (err) {
-    console.error("Hiba a foglalások lekérdezése közben:", err);
+    logger.error("Hiba a foglalások lekérdezése közben:", err);
     return [];
   }
 }
@@ -117,7 +118,7 @@ export async function getAllBookings() {
       return (b.time || "").localeCompare(a.time || "");
     });
   } catch (err) {
-    console.error("Hiba az összes foglalás lekérdezése közben:", err);
+    logger.error("Hiba az összes foglalás lekérdezése közben:", err);
     return [];
   }
 }
@@ -130,7 +131,7 @@ export async function getUserData(userId) {
     if (docRef.empty) return null;
     return docRef.docs[0].data();
   } catch (err) {
-    console.error("Hiba a felhasználó adatainak lekérdezése közben:", err);
+    logger.error("Hiba a felhasználó adatainak lekérdezése közben:", err);
     return null;
   }
 }
@@ -153,7 +154,7 @@ export async function signInWithGoogle() {
     const result = await signInWithPopup(auth, googleProvider);
     return { user: result.user, error: null };
   } catch (error) {
-    console.error("Google bejelentkezési hiba:", error);
+    logger.error("Google bejelentkezési hiba:", error);
     return { user: null, error: getHungarianError(error.code) };
   }
 }
@@ -170,7 +171,7 @@ export async function signInWithFacebook() {
     const result = await signInWithPopup(auth, fbProvider);
     return { user: result.user, error: null };
   } catch (error) {
-    console.error("Facebook bejelentkezési hiba:", error);
+    logger.error("Facebook bejelentkezési hiba:", error);
     return { user: null, error: getHungarianError(error.code) };
   }
 }
@@ -180,7 +181,7 @@ export async function signOutUser() {
     await signOut(auth);
     return { error: null };
   } catch (error) {
-    console.error("Kijelentkezési hiba:", error);
+    logger.error("Kijelentkezési hiba:", error);
     return { error: "Kijelentkezési hiba történt" };
   }
 }
@@ -199,7 +200,7 @@ export async function approveBooking(bookingId) {
     });
     return { success: true };
   } catch (err) {
-    console.error("Hiba a foglalás jóváhagyása közben:", err);
+    logger.error("Hiba a foglalás jóváhagyása közben:", err);
     throw err;
   }
 }
@@ -213,7 +214,7 @@ export async function rejectBooking(bookingId) {
     });
     return { success: true };
   } catch (err) {
-    console.error("Hiba a foglalás elutasítása közben:", err);
+    logger.error("Hiba a foglalás elutasítása közben:", err);
     throw err;
   }
 }
@@ -224,7 +225,7 @@ export async function deleteBooking(bookingId) {
     await deleteDoc(bookingRef);
     return { success: true };
   } catch (err) {
-    console.error("Hiba a foglalás törlése közben:", err);
+    logger.error("Hiba a foglalás törlése közben:", err);
     throw err;
   }
 }
@@ -242,7 +243,7 @@ export async function getAllServices() {
       return (a.label || "").localeCompare(b.label || "");
     });
   } catch (err) {
-    console.error("Hiba a szolgáltatások lekérdezése közben:", err);
+    logger.error("Hiba a szolgáltatások lekérdezése közben:", err);
     return [];
   }
 }
@@ -256,7 +257,7 @@ export async function saveService(service) {
     });
     return { id: docRef.id };
   } catch (err) {
-    console.error("Hiba a szolgáltatás mentése közben:", err);
+    logger.error("Hiba a szolgáltatás mentése közben:", err);
     throw err;
   }
 }
@@ -270,7 +271,7 @@ export async function updateService(serviceId, updates) {
     });
     return { success: true };
   } catch (err) {
-    console.error("Hiba a szolgáltatás frissítése közben:", err);
+    logger.error("Hiba a szolgáltatás frissítése közben:", err);
     throw err;
   }
 }
@@ -284,7 +285,18 @@ export async function deleteService(serviceId) {
     });
     return { success: true };
   } catch (err) {
-    console.error("Hiba a szolgáltatás törlése közben:", err);
+    logger.error("Hiba a szolgáltatás törlése közben:", err);
+    throw err;
+  }
+}
+
+export async function permanentlyDeleteService(serviceId) {
+  try {
+    const serviceRef = doc(db, "services", serviceId);
+    await deleteDoc(serviceRef);
+    return { success: true };
+  } catch (err) {
+    logger.error("Hiba a szolgáltatás végleges törlése közben:", err);
     throw err;
   }
 }

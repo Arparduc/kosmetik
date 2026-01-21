@@ -71,7 +71,7 @@ function Navbar() {
             </NavLink>
           ) : (
             <NavLink to="/Login" className="nav-link">
-              Login
+              Bejelentkezés
             </NavLink>
           )}
         </div>

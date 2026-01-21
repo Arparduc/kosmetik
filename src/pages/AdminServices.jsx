@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getAllServices, saveService, updateService, deleteService } from "../lib/firebase";
+import { getAllServices, saveService, updateService, deleteService, permanentlyDeleteService } from "../lib/firebase";
 import { slugify } from "../lib/utils";
 import { migrateServicesToFirestore } from "../lib/migrateServices";
 import "./AdminServices.css";
@@ -88,7 +88,7 @@ function AdminServices() {
     }
   }
 
-  async function handleDelete(serviceId) {
+  async function handleDeactivate(serviceId) {
     if (!confirm("Biztosan deaktiválod ezt a szolgáltatást?")) return;
 
     try {
@@ -97,6 +97,19 @@ function AdminServices() {
       loadServices();
     } catch (err) {
       alert("Hiba történt a deaktiválás során.");
+      console.error(err);
+    }
+  }
+
+  async function handlePermanentDelete(serviceId) {
+    if (!confirm("Biztosan véglegesen törlöd ezt a szolgáltatást? Ez a művelet NEM visszavonható!")) return;
+
+    try {
+      await permanentlyDeleteService(serviceId);
+      alert("Szolgáltatás véglegesen törölve!");
+      loadServices();
+    } catch (err) {
+      alert("Hiba történt a törlés során.");
       console.error(err);
     }
   }
@@ -199,12 +212,19 @@ function AdminServices() {
                   >
                     Szerkesztés
                   </button>
-                  {service.active !== false && (
+                  {service.active !== false ? (
                     <button
-                      className="delete-btn"
-                      onClick={() => handleDelete(service.id)}
+                      className="deactivate-btn"
+                      onClick={() => handleDeactivate(service.id)}
                     >
                       Deaktiválás
+                    </button>
+                  ) : (
+                    <button
+                      className="delete-btn"
+                      onClick={() => handlePermanentDelete(service.id)}
+                    >
+                      Törlés
                     </button>
                   )}
                 </div>

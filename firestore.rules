@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper funkciók
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)) &&
+             get(/databases/$(database)/documents/users/$(userId)).data.isAdmin == true;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function validBooking(data) {
+      return data.name != null &&
+             data.name is string &&
+             data.email != null &&
+             data.email is string &&
+             data.phone != null &&
+             data.phone is string &&
+             data.date != null &&
+             data.date is string &&
+             data.time != null &&
+             data.time is string &&
+             data.service != null &&
+             data.service is list &&
+             data.userId == request.auth.uid;
+    }
+
+    // Felhasználók collection
+    match /users/{userId} {
+      // Olvasás: Saját adat vagy admin
+      allow read: if isOwner(userId) || isAdmin(request.auth.uid);
+
+      // Írás: Csak admin (isAdmin field védelem!)
+      allow write: if isAdmin(request.auth.uid);
+    }
+
+    // Foglalások collection
+    match /bookings/{bookingId} {
+      // Olvasás: Saját foglalás vagy admin
+      allow read: if isAuthenticated() &&
+                     (request.auth.uid == resource.data.userId ||
+                      isAdmin(request.auth.uid));
+
+      // Létrehozás: Bejelentkezett user, validált adatok
+      allow create: if isAuthenticated() && validBooking(request.resource.data);
+
+      // Módosítás, törlés: Csak admin
+      allow update, delete: if isAdmin(request.auth.uid);
+    }
+
+    // Szolgáltatások collection
+    match /services/{serviceId} {
+      // Olvasás: Mindenki (publikus)
+      allow read: if true;
+
+      // Írás (create, update, delete): Csak admin
+      allow write: if isAdmin(request.auth.uid);
+    }
+
+    // Minden más collection tiltva
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,10 +1,15 @@
 import emailjs from "@emailjs/browser";
+import { logger } from "./logger";
 
-// EmailJS konfiguráció
+// EmailJS konfiguráció - környezeti változókból
 const EMAILJS_CONFIG = {
-  serviceId: "service_i1g2a4k",
-  templateId: "template_wp7hf2m",
-  publicKey: "Ux5hnhgW8MuaNaa5q",
+  serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+  publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+};
+
+const TEMPLATE_IDS = {
+  approval: import.meta.env.VITE_EMAILJS_TEMPLATE_ID_APPROVAL,
+  rejection: import.meta.env.VITE_EMAILJS_TEMPLATE_ID_REJECTION,
 };
 
 /**
@@ -17,7 +22,7 @@ export async function sendApprovalEmail(booking) {
     const userEmail = booking.userEmail || booking.email;
 
     if (!userEmail) {
-      console.warn("⚠️ Nincs email cím, email nem kerül kiküldésre.");
+      logger.warn("⚠️ Nincs email cím, email nem kerül kiküldésre.");
       return { success: false, error: "No email address" };
     }
 
@@ -41,15 +46,15 @@ export async function sendApprovalEmail(booking) {
     // Email küldése EmailJS-en keresztül
     const response = await emailjs.send(
       EMAILJS_CONFIG.serviceId,
-      EMAILJS_CONFIG.templateId,
+      TEMPLATE_IDS.approval,
       templateParams,
       EMAILJS_CONFIG.publicKey
     );
 
-    console.log("✅ Email sikeresen elküldve:", response);
+    logger.log("✅ Email sikeresen elküldve:", response);
     return { success: true, response };
   } catch (error) {
-    console.error("❌ Hiba az email küldése közben:", error);
+    logger.error("❌ Hiba az email küldése közben:", error);
     return { success: false, error };
   }
 }
@@ -64,7 +69,7 @@ export async function sendRejectionEmail(booking) {
     const userEmail = booking.userEmail || booking.email;
 
     if (!userEmail) {
-      console.warn("⚠️ Nincs email cím, email nem kerül kiküldésre.");
+      logger.warn("⚠️ Nincs email cím, email nem kerül kiküldésre.");
       return { success: false, error: "No email address" };
     }
 
@@ -82,22 +87,15 @@ export async function sendRejectionEmail(booking) {
     // Email küldése EmailJS-en keresztül
     const response = await emailjs.send(
       EMAILJS_CONFIG.serviceId,
-      "template_axjeb1g", // Rejection Email template
+      TEMPLATE_IDS.rejection,
       templateParams,
       EMAILJS_CONFIG.publicKey
     );
 
-    console.log("✅ Visszamondó email elküldve:", response);
+    logger.log("✅ Visszamondó email elküldve:", response);
     return { success: true, response };
   } catch (error) {
-    console.error("❌ Hiba a visszamondó email küldése közben:", error);
+    logger.error("❌ Hiba a visszamondó email küldése közben:", error);
     return { success: false, error };
   }
-}
-
-// Konfiguráció frissítése (admin UI-ból később)
-export function updateEmailConfig(config) {
-  EMAILJS_CONFIG.serviceId = config.serviceId || EMAILJS_CONFIG.serviceId;
-  EMAILJS_CONFIG.templateId = config.templateId || EMAILJS_CONFIG.templateId;
-  EMAILJS_CONFIG.publicKey = config.publicKey || EMAILJS_CONFIG.publicKey;
 }

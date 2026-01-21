@@ -6,7 +6,7 @@
   height: 56vh;
   min-height: 320px;
   width: 100%;
-  background-size: contain;
+  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   border-radius: 12px;

@@ -195,7 +195,8 @@
 }
 
 .service-card-actions .edit-btn,
-.service-card-actions .delete-btn {
+.service-card-actions .delete-btn,
+.service-card-actions .deactivate-btn {
   flex: 1;
   padding: 0.5rem 0.3rem;
   border: none;
@@ -214,6 +215,16 @@
 
 .service-card-actions .edit-btn:hover {
   background: #5568d3;
+  transform: scale(1.02);
+}
+
+.service-card-actions .deactivate-btn {
+  background: #f39c12;
+  color: white;
+}
+
+.service-card-actions .deactivate-btn:hover {
+  background: #e67e22;
   transform: scale(1.02);
 }
 

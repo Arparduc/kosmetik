@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import heroImg from "../assets/images/gallery-11-portrait.jpg";
+import heroImg from "../assets/images/gallery-06-mask-application.jpg";
 import "./Home.css";
 
 function Home() {
@@ -19,14 +19,21 @@ function Home() {
       </header>
 
       <section>
-        <h2>Üdvözöl a Black Beauty</h2>
+        <h2>Üdvözöllek a Black Beauty-ben!</h2>
         <p>
-          Barátságos, hangulatos kozmetikai szalon, ahol a fókusz a pihenésen és
-          a felfrissülésen van.
+          Számomra a kozmetika több mint szépítő kezelések sora – egy olyan élmény,
+          ahol a szakértelem, a minőség és a törődés találkozik. Hiszek abban, hogy a
+          szép bőr alapja a személyre szabott figyelem, ezért minden kezelést a bőr
+          aktuális állapotához és egyéni igényeihez igazítok.
         </p>
         <p>
-          Nézd meg szolgáltatásainkat, árainkat, és foglalj időpontot pár
-          kattintással!
+          A Black Beauty-ben prémium minőségű termékekkel, nyugodt, biztonságos
+          környezetben várlak, ahol valóban megállhatsz egy pillanatra. Célom, hogy ne
+          csak látható eredménnyel, hanem feltöltődve, kiegyensúlyozottan és elégedetten
+          távozz – mert a szépség akkor a legszebb, amikor jól is érzed magad a bőrödben.
+        </p>
+        <p>
+          Ha egy kis luxusra, odafigyelésre és valódi énidőre vágysz, jó helyen jársz.
         </p>
       </section>
     </main>

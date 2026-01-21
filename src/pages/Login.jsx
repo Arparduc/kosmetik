@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { CONTACT_INFO } from "../constants/business";
 import "./Login.css";
 
 function Login() {
@@ -52,7 +53,10 @@ function Login() {
           könnyedén időpontot foglalj.
         </p>
         <p className="login-phone">
-          Vagy foglalj telefonon: <a href="tel:+36301234567">+36 30 123 4567</a>
+          Vagy foglalj telefonon: <a href={`tel:${CONTACT_INFO.PHONE.replace(/\s/g, '')}`}>{CONTACT_INFO.PHONE}</a>
+        </p>
+        <p className="login-phone">
+          Facebook-on is elérhetsz minket: <a href={CONTACT_INFO.FACEBOOK_URL} target="_blank" rel="noopener noreferrer">Black Beauty</a>
         </p>
 
         {error && <div className="error-message">{error}</div>}

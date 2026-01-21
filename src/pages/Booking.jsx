@@ -3,23 +3,41 @@ import "./Booking.css";
 import { saveBooking, getBookingsByDate, getAllServices } from "../lib/firebase";
 import { slugify, timeToMinutes, minutesToTime } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
+import { BUSINESS_HOURS, BOOKING_RULES } from "../constants/business";
+import { logger } from "../lib/logger";
 
 // --- helpers (IDŐ SZÁMOLÁS) ---
-// Minimum foglalható dátum kiszámítása (mai nap + 2 nap, vasárnap kihagyva)
+// Ellenőrzi hogy jelenleg nyitva van-e
+function isCurrentlyOpen() {
+  const now = new Date();
+  const day = now.getDay(); // 0=vasárnap, 1=hétfő, ..., 6=szombat
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const currentTime = hours * 60 + minutes;
+
+  // Zárt napok ellenőrzése
+  if (BUSINESS_HOURS.CLOSED_DAYS.includes(day)) return false;
+
+  // Nyitvatartás ellenőrzése
+  return currentTime >= BUSINESS_HOURS.OPEN_TIME_MINUTES &&
+         currentTime < BUSINESS_HOURS.CLOSE_TIME_MINUTES;
+}
+
+// Minimum foglalható dátum kiszámítása (mai nap + MIN_BOOKING_DAYS, vasárnap kihagyva)
 function getMinBookingDate() {
   const today = new Date();
   const minDate = new Date(today);
-  minDate.setDate(today.getDate() + 2); // +2 nap előretekintés
+  minDate.setDate(today.getDate() + BOOKING_RULES.MIN_BOOKING_DAYS);
 
   // Ha vasárnap lenne (0), akkor még +1 nap (hétfő)
-  if (minDate.getDay() === 0) {
+  if (BUSINESS_HOURS.CLOSED_DAYS.includes(minDate.getDay())) {
     minDate.setDate(minDate.getDate() + 1);
   }
 
   return minDate.toISOString().split("T")[0];
 }
 
-function expandBookingToSlots(booking, step = 15) {
+function expandBookingToSlots(booking, step = BOOKING_RULES.TIME_SLOT_MINUTES) {
   const start = booking.time;
   const dur = booking.durationMinutes ?? 30;
   if (!start) return [];
@@ -41,7 +59,7 @@ function requiredSlotsForStart(startTime, durationMinutes) {
   const endM = startM + dur;
 
   const slots = [];
-  for (let m = startM; m < endM; m += 15) {
+  for (let m = startM; m < endM; m += BOOKING_RULES.TIME_SLOT_MINUTES) {
     slots.push(minutesToTime(m));
   }
   return slots;
@@ -128,13 +146,29 @@ function Booking() {
     try {
       const raw = localStorage.getItem("preselectedServices");
       if (!raw) return;
+
       const arr = JSON.parse(raw);
-      if (Array.isArray(arr) && arr.length) {
-        setForm((p) => ({ ...p, service: arr }));
-        localStorage.removeItem("preselectedServices");
+
+      // Validáció: Array-e és van-e benne elem?
+      if (!Array.isArray(arr)) {
+        throw new Error("Invalid preselected services format");
       }
-    } catch (err) {
-      console.warn("no preselected services", err);
+
+      if (arr.length > 0) {
+        setForm((p) => ({ ...p, service: arr }));
+      }
+
+      // Tisztítás, függetlenül attól hogy volt-e adat
+      localStorage.removeItem("preselectedServices");
+    } catch (error) {
+      // JSON parse error vagy validációs hiba
+      if (error instanceof SyntaxError) {
+        logger.warn("Corrupt preselectedServices in localStorage");
+      } else {
+        logger.warn("Error loading preselectedServices:", error.message);
+      }
+      // Tisztítás hogy legközelebb ne legyen probléma
+      localStorage.removeItem("preselectedServices");
     }
   }, []);
 
@@ -402,9 +436,9 @@ function Booking() {
               name="phone"
               value={form.phone}
               onChange={handleChange}
-              placeholder="+36 70 123 4567"
+              placeholder="+36 30 716 0818"
               pattern="^(\+36|06)[\s\-]?[1-9][0-9][\s\-]?[0-9]{3}[\s\-]?[0-9]{4}$"
-              title="Kérlek valós magyar telefonszámot adj meg (pl. +36 70 123 4567 vagy 06 70 123 4567)"
+              title="Kérlek valós magyar telefonszámot adj meg (pl. +36 30 716 0818 vagy 06 30 716 0818)"
               required
             />
           </label>
@@ -454,7 +488,11 @@ function Booking() {
               </div>
               <div className="slot-legend">
                 <span>
-                  <strong>Jelenleg nyitva:</strong> 08:00–17:00
+                  {isCurrentlyOpen() ? (
+                    <><strong style={{ color: '#27ae60' }}>● Jelenleg nyitva</strong> - {BUSINESS_HOURS.HOURS_TEXT}</>
+                  ) : (
+                    <><strong style={{ color: '#e74c3c' }}>● Jelenleg zárva</strong> - Nyitvatartás: {BUSINESS_HOURS.HOURS_TEXT}</>
+                  )}
                 </span>
               </div>
             </div>
