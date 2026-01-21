@@ -29,3 +29,7 @@ dist-ssr
 # Claude Code temporary files
 tmpclaude-*
 nul
+
+# Documentation files (local only)
+PREZENTACIO.md
+SECURITY_FIX_GUIDE.md
