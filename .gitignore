@@ -25,3 +25,7 @@ dist-ssr
 
 .env
 .env.*
+
+# Claude Code temporary files
+tmpclaude-*
+nul
