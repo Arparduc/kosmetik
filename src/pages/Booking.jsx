@@ -226,10 +226,11 @@ function Booking() {
       );
 
       setForm({
-        name: "",
+        lastName: "",
+        firstName: "",
         phone: "",
         service: [],
-        date: "",
+        date: getMinBookingDate(),
         time: "",
         notes: "",
       });
